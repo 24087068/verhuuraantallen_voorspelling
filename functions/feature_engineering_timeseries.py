@@ -1,6 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+import numpy as np
+from scipy.fft import fft, fftfreq
+from scipy.signal import find_peaks, butter, filtfilt
 
 # SETUP !!!
 def time_series_setup(df, datetime_col, uniform_sampling):
@@ -81,3 +84,64 @@ def decomposition_featuring(df, target_col, period, lags, trend_smooth):
         'resid': resid
     }, index=df.index)
     return decomp_features
+
+# LAGS !!!
+def lag_featuring(df, target_col, lags):
+    """
+    Create lag features for a time series.
+    Parameters:
+        df (dataframe): Time series dataframe with datetime index
+        target_col (str): Target column to create lags for
+        lags (list): list of integer lags (in periods)
+    Returns:
+        pd.DataFrame: Lagged features
+    """
+    y = df[target_col].ffill().bfill()
+
+    # Create lagged features
+    # Prompt 1: Fix lag_featuring function's iteration
+    lagged_df = pd.DataFrame(index=df.index)
+    for lag in lags:
+        lagged_df[f"{target_col}_lag{lag}"] = y.shift(lag)
+
+    # Plot original with lagged features
+    plt.figure(figsize=(15, 5))
+    plt.plot(df.index, y, label="Original")
+    for col in lagged_df.columns:
+        plt.plot(df.index, lagged_df[col], label=col)
+    plt.legend()
+    plt.title("Original Vs Lag Features")
+    plt.show()
+
+    return lagged_df
+
+# FTT !!!
+def frequency_featuring(df, target_col, sample_interval, filter_cutoff):
+    signal = df[target_col].ffill().bfill().values
+    n = len(signal)
+
+    # Low-pass filter
+    # Prompt 2: Fix error and get low-pass criteria filtering
+    b, a = butter(2, filter_cutoff, btype='low')
+    signal = filtfilt(b, a, signal)
+
+    # FFT
+    fft_vals = fft(signal)
+    magnitude = np.abs(fft_vals[:n//2])
+    freqs = fftfreq(n, d=sample_interval)[:n//2]
+
+    # Peaks
+    peaks, _ = find_peaks(magnitude, prominence=np.max(magnitude)*0.1)
+
+    # Periods
+    periods = 1 / freqs[peaks]
+
+    # Plot
+    plt.figure(figsize=(15, 5))
+    plt.plot(freqs, magnitude)
+    plt.plot(freqs[peaks], magnitude[peaks], 'ro')
+    plt.xlabel('Frequency')
+    plt.ylabel('Magnitude')
+    plt.show()
+
+    return freqs, magnitude, peaks, periods

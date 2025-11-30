@@ -96,7 +96,7 @@ def lag_featuring(df, target_col, lags):
     Returns:
         pd.DataFrame: Lagged features
     """
-    y = df[target_col].ffill().bfill()
+    y = df[target_col]
 
     # Create lagged features
     # Prompt 1: Fix lag_featuring function's iteration

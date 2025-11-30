@@ -86,16 +86,20 @@ def decomposition_featuring(df, target_col, period, lags, trend_smooth):
     return decomp_features
 
 # LAGS !!!
-def lag_featuring(df, target_col, lags):
+def lag_featuring(df, target_col=None, lags=None):
     """
     Create lag features for a time series.
     Parameters:
         df (dataframe): Time series dataframe with datetime index
-        target_col (str): Target column to create lags for
-        lags (list): list of integer lags (in periods)
+        target_col (str, optional): Target column to create lags for. If None, function does nothing.
+        lags (list, optional): list of integer lags (in periods)
     Returns:
         pd.DataFrame: Lagged features
     """
+    if target_col is None or target_col not in df.columns:
+        # Return empty DataFrame if target column missing
+        return pd.DataFrame(index=df.index)
+
     y = df[target_col]
 
     # Create lagged features
@@ -116,7 +120,11 @@ def lag_featuring(df, target_col, lags):
     return lagged_df
 
 # FTT !!!
-def frequency_featuring(df, target_col, sample_interval, filter_cutoff):
+def frequency_featuring(df, target_col=None, sample_interval=1, filter_cutoff=0.1):
+    if target_col is None or target_col not in df.columns:
+        # Return None for all outputs if target column missing
+        return None, None, None, None
+
     signal = df[target_col].ffill().bfill().values
     n = len(signal)
 
